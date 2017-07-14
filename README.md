@@ -2,7 +2,7 @@
 Files for Passow et al. 2017: "The roles of plasticity and evolutionary change in shaping gene expression variation in natural populations of extremophile fish"
 
 ## Analysis pipeline
- - 
+ - [analysis pipeline](https://github.com/jokelley/H2Sexposure-expression/blob/master/linux_scripts.txt)
 
 ## Differential expression analysis 
  - [exposure-glm.R](https://github.com/jokelley/H2Sexposure-expression/blob/master/exposure-glm.R)
