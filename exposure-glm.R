@@ -1,4 +1,4 @@
-# All Aanalyses performed with R studio 3.3.3
+# All Aanalyses performed with R 3.3.3
 
 # Load libraries 
 library(limma)
