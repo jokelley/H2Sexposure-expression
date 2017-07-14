@@ -1,0 +1,114 @@
+################################################################################################
+#
+#           1. Read trimming, mapping and expression analyses                      
+#
+#
+################################################################################################
+
+##All trimming, mapping and expression analyses were performed at Oklahoma State Universities high performce super computing center
+# Runs Trim Galore on the files specified in the "TrimGalore_fastq_Locations.txt".  Note: this is a tab delimited file.
+# The for loop is hard coded to the number to lines in the "TrimGalore_fastq_Locations.txt" file. 
+# "cat" opens the file.
+# "sed" is grabbing the ith line of the file.
+# "awk is grabbing the 1st, 2nd, or 3rd column from the line above.
+# "mikdir" is creating a directory with the name supplied in "TrimGalore_fastq_Locations.txt"
+# The end result of running this script is a new set of directories, trimmed files that match, and a fastqc report that 
+#     match the directory structure of your pre-processed read data.
+
+#Run trimgalore using quality 0 (to remove primer dimer)
+#Version: trimgalore/0.4.0
+#Version: fastqc/0.11.3
+#Version: cutadept/1.3
+for i in {1..109}
+
+do
+read1=$(cat TrimGalore_fastq_Location.txt | sed -n ''$i'p' | awk '{print $1}')
+read2=$(cat TrimGalore_fastq_Location.txt | sed -n ''$i'p' | awk '{print $2}')
+dirName=$(cat TrimGalore_fastq_Location.txt | sed -n ''$i'p' | awk '{print $3}')
+
+trim_galore --quality 0 --fastqc_args "--noextract --nogroup" --stringency 6 -e 0.2 --gzip --length 50 --output_dir <path to output directory> --paired $read1 $read2
+done
+
+##Trim files again by running the loop with quality 24
+#Version: trimgalore/0.4.0
+#Version: fastqc/0.11.3
+#Version: cutadept/1.3
+
+for i in {1..109}
+
+do
+read1=$(cat TrimGalore_fastq_Location.txt | sed -n ''$i'p' | awk '{print $1}')
+read2=$(cat TrimGalore_fastq_Location.txt | sed -n ''$i'p' | awk '{print $2}')
+dirName=$(cat TrimGalore_fastq_Location.txt | sed -n ''$i'p' | awk '{print $3}')
+
+trim_galore --quality 24 --fastqc_args "--noextract --nogroup" --stringency 6 -e 0.2 --gzip --length 50 --output_dir <path to output directory> --paired $read1 $read2
+done
+
+#Concatenate mitochondrial sequences into reference genome (Accession number KC992991 from Pfenninger et al. 2014)
+cat <mitochondrial_sequences.fa> >> <multifastafile.fa>
+
+##Index reference genome
+##Version: 0.7.12-r1039
+bwa index <path to reference genome>
+
+##Map reads to reference genome using BWA-mem aligner. -V Control the verbose level of the output (allowing for errors and warnings) -c Discard a MEM if it has more than 10000 occurence in the genome.
+##Version: 0.7.12-r1039
+##Do this step for all individuals
+bwa mem -v 2 -c 1000000 <path to indexed genome> <path to read 1> < path to read 2> > <filename.sam>
+
+##run awk script to remove soft clipping (note, this is run due to incompatabilities with aligning reads to the genome and extracting transcripts in cufflinks)
+##Do this step for all individuals  
+awk 'BEGIN {OFS="\t"} {if (substr($1,1,1)=="@") {print;next}; split($6,C,/[0-9]*/); split($6,L,/[SMDIN]/); if (C[2]=="S") {$10=substr($10,L[1]+1); $11=substr($11,L[1]+1)}; if (C[length(C)]=="S") {L1=length($10)-L[length(L)-1]; $10=substr($10,1,L1); $11=substr($11,1,L1); }; gsub(/[0-9]*S/,"",$6); print} <path to mapped .sam filew> > <filename.sam>
+
+##Convert Sam to Bam files 
+##-b outputs in the .bam format, -S detects .sam output and -h includes the header
+##Version: 0.1.19-44428cd
+##Do this step for all individuals
+samtools view -bSh <path to awk corrected .sam files> > <filename.bam>
+
+##Sort .bam files (based on coordinates) 
+##Version: 0.1.19-44428cd
+##Do this step for all individuals 
+samtools sort <path to .bam file> <filename.bam>
+
+##Check alignment statistics using samtools flagstat
+##Version: 0.1.19-44428cd
+##Do this step for all individuals
+samtools flagstat <path to sorted mapped reads.bam>
+
+###Note at this step, we removed any individuals with poor mapping percents to the genome. 
+
+##Run StringTie to to extract putatively expressed regions for each individual (reference guided with the .gff file)
+##Version 1.3.2d
+stringtie -e -B -G <path to .gff file> -o <path to output directory> <path to sorted .bam file>
+
+################################################################################################
+#
+#           2. Generate gene and transcript counts matrix                  
+#
+#
+################################################################################################
+
+
+##Run python script (prepDE.py) to construct gene and transcript counts matrix
+./prepDY.py -i <path to stringtie output> -g <where to output gene matrix> -t <where to output transcript matrix>
+
+################################################################################################
+#
+#           3. BLAST parameters                   
+#
+#
+################################################################################################
+
+##Run perl script (gff2fasta.pl) to extract one representative CDS sequence per gene using .gff file
+##Script can be found here: https://github.com/minillinim/gff2fasta/blob/master/gff2fasta.pl
+perl gff2fasta.pl <path to .gff file> <path to .fasta file> <path to output file>
+
+##Run BLASTx against the human protein database to identify gene annotations 
+##Note that for BLASTx, we set the max number of sequences and max HSP scores to 1
+#Make blast database
+makeblastdb -in <path to human blast database> -parse_seqids -dbtype prot
+
+#BLASTX
+blastx -query <path to fasta> -db <path to human blast database>  -max_target_seqs 1 -max_hsps 1 -evalue 0.001 -outfmt 5 > <path to output file.xml>
+
