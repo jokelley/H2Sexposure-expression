@@ -101,8 +101,8 @@ stringtie -e -B -G <path to .gff file> -o <path to output directory> <path to so
 ################################################################################################
 
 ##Run perl script (gff2fasta.pl) to extract one representative CDS sequence per gene using .gff file
-##Script can be found here: https://github.com/minillinim/gff2fasta/blob/master/gff2fasta.pl
-perl gff2fasta.pl <path to .gff file> <path to .fasta file> <path to output file>
+##Script was found here: https://www.biostars.org/p/46281/ (gff2fasta.pl)
+perl gff2fasta.pl <path to .fasta file> <path to .gff file> <path to output file>
 
 ##Run BLASTx against the human protein database to identify gene annotations 
 ##Note that for BLASTx, we set the max number of sequences and max HSP scores to 1
