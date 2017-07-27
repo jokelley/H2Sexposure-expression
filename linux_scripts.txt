@@ -91,6 +91,7 @@ stringtie -e -B -G <path to .gff file> -o <path to output directory> <path to so
 
 
 ##Run python script (prepDE.py) to construct gene and transcript counts matrix
+## preDE.py downloaded from: http://ccb.jhu.edu/software/stringtie/dl/prepDE.py
 ./prepDY.py -i <path to stringtie output> -g <where to output gene matrix> -t <where to output transcript matrix>
 
 ################################################################################################
