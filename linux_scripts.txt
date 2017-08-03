@@ -101,7 +101,7 @@ stringtie -e -B -G <path to .gff file> -o <path to output directory> <path to so
 #
 ################################################################################################
 
-##Run perl script (gff2fasta.pl) to extract one representative CDS sequence per gene using .gff file
+##Run perl script (gff2fasta.pl) to extract one representative sequence per gene using .gff file
 ##Script was found here: https://www.biostars.org/p/46281/ (gff2fasta.pl)
 perl gff2fasta.pl <path to .fasta file> <path to .gff file> <path to output file>
 
