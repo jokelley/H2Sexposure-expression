@@ -416,7 +416,7 @@ dgeg <- DGEList(counts=d, group=group)
 # Calculate normalized factors based on raw library sizes
 dg <- calcNormFactors(dgeg)
 
-# Construct MDS plot on top 10,000 expressed transcripts 
+# Construct MDS plot on top 10,000 genes with the largest standard deviations between samples  
 mds <- plotMDS(dg, top=10000, gene.selection = "common")
 
 # Convert "names" into symbols and change color to represent the different habitats
